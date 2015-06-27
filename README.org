@@ -1,6 +1,8 @@
 #+AUTHOR: Christopher Reichert
 #+TITLE: Haskell Dockerfile DSL
 
+[[https://travis-ci.org/creichert/dockerfile][https://travis-ci.org/creichert/dockerfile.svg?branch=master]]
+
 A simple Dockerfile DSL in Haskell
 
 #+BEGIN_SRC haskell
