@@ -19,7 +19,7 @@ main = do
              cmd [ "echo", "hello world"]
 
   putStrLn df
-#END_SRC
+#+END_SRC
 
 
 ** Why?
@@ -30,9 +30,9 @@ main = do
   /More work to be done here, see Haddock comments/
 
 - [ ] Composable
-
   Dockerfiles can be more easily composed and manipulated, making it
   easier to integrate into programs.
 
   =postgresDockerFile >> postgisDockerFile >> otherDockerFile=
-    Support for "monadic" operations, looping, etc
+
+- [ ] Support for "monadic" computation (mapM,forM,replicateM,etc)
