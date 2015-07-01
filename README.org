@@ -24,17 +24,24 @@ main = do
 #+END_SRC
 
 
-** Why?
+** Motivation
 
 
-- [ ] Type Safety
+- Type Safety
+
+
   Eliminates common errors and syntax mistakes.
+
   /More work to be done here, see Haddock comments/
 
-- [ ] Composable
+
+- Composable
+
   Dockerfiles can be more easily composed and manipulated, making it
   easier to integrate into programs.
 
   =postgresDockerFile >> postgisDockerFile >> otherDockerFile=
 
-- [ ] Support for "monadic" computation (mapM,forM,replicateM,etc)
+
+- Support for "monadic" computation (mapM,forM,replicateM,etc)
+

@@ -1,5 +1,5 @@
 
--- | A Simple Dockerfile DSL for Haskell
+-- | A Simple DSL for describing and generating Dockerfiles in Haskell
 --
 -- @
 -- main :: IO ()
@@ -7,7 +7,7 @@
 --   let df = dockerfile $ do
 --              from "debian:trusty"
 --              maintainer "creichert <creichert07@gmail.com>"
---              run "apt-get -y update "
+--              run "apt-get -y update"
 --              run "apt-get -y upgrade"
 --              cmd [ "echo", "hello world"]
 --   putStrLn df
@@ -280,4 +280,5 @@ workdir :: FilePath -> Docker ()
 workdir cwd = tell [ WorkDir cwd ]
 
 onbuild :: Instruction -> Docker ()
-onbuild c = error "tell [ OnBuild c ]"
+onbuild c = error "OnBuild instruction is not yet supported"
+
