@@ -5,7 +5,7 @@
 -- main :: IO ()
 -- main = do
 --   let df = dockerfile $ do
---              from "debian:trusty"
+--              from "debian:stable"
 --              maintainer "creichert <creichert07@gmail.com>"
 --              run "apt-get -y update"
 --              run "apt-get -y upgrade"
