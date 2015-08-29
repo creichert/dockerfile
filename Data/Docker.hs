@@ -281,4 +281,3 @@ workdir cwd = tell [ WorkDir cwd ]
 
 onbuild :: Instruction -> Docker ()
 onbuild c = error "OnBuild instruction is not yet supported"
-
