@@ -1,7 +1,7 @@
 
 -- | A simple strict Writer monad implementation
 --
--- This module is not intended to be exposed and only servers
+-- This module is not intended to be exposed and only serves
 -- to create a trivial and simple implementation for internal
 -- use within this package.
 --

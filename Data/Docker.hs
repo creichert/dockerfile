@@ -1,28 +1,33 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase        #-}
 
 -- | A Simple DSL for describing and generating Dockerfiles in Haskell
 --
+-- Compatible w/ Docker v18.03
+--
 -- @
 -- main :: IO ()
--- main = do
---   let df = dockerfile $ do
---              from "debian:stable"
---              maintainer "creichert <creichert07@gmail.com>"
---              run "apt-get -y update"
---              run "apt-get -y upgrade"
---              cmd [ "echo", "hello world"]
---   putStrLn df
+-- main = putStrLn $
+--   dockerfile $ do
+--       from "debian:stable"
+--       maintainer "creichert <creichert07@gmail.com>"
+--       run "apt-get -y update"
+--       run "apt-get -y upgrade"
+--       cmd [ "echo", "hello world"]
 -- @
 
-{-# LANGUAGE OverloadedStrings #-}
 
 module Data.Docker
        (
          -- * Types
          Docker
+       , CopyOpt(..)
        , dockerfile
+       , dockerfileWrite
 
          -- * Docker Instructions
        , from
+       , fromas
        , maintainer
        , run
        , env
@@ -48,47 +53,68 @@ type Docker a = Writer DockerFile a
 dockerfile :: Docker a -> String
 dockerfile = unlines . map prettyCmd . execWriter
 
+dockerfileWrite :: FilePath -> Docker a -> IO ()
+dockerfileWrite fp docker = do
+    writeFile fp (unlines (fmap prettyCmd (execWriter docker)))
 
-type Script = String
+type Script     = String
 type ScriptFile = FilePath
-type Param = String
-type Distro = String
+type Param      = String
+type ImageName  = String
+type As         = String
 
 
 -- | Dockerfile instruction set
 data Instruction
-  = From Distro
-    -- ^ The FROM instruction sets the Base Image for subsequent
-    -- instructions.
-    --
-    -- <https://docs.docker.com/reference/builder/#from>
-    --
-    -- * FROM must be the first non-comment instruction in the Dockerfile.
-    --
-    -- * FROM can appear multiple times within a single Dockerfile in order to
-    -- create multiple images.
-    --
-    -- Syntax:
-    --
-    -- @
-    -- FROM <image>
-    -- FROM <image>:<tag>
-    -- FROM <image>@<digest>
-    -- @
-    --
 
-  | Maintainer String
-    -- ^ The MAINTAINER instruction allows you to set the Author field
-    -- of the generated images.
+  = From ImageName (Maybe As)
+    -- ^ The @FROM@ instruction initializes a new build stage and sets
+    -- the Base Image for subsequent instructions. As such, a valid
+    -- Dockerfile must start with a @FROM@ instruction. The image can be
+    -- any valid image – it is especially easy to start by pulling an
+    -- image from the Public Repositories.
+    --
+    -- @ARG@ is the only instruction that may precede @FROM@ in the
+    -- Dockerfile. See Understand how @ARG@ and @FROM@ interact.
+    --
+    -- @FROM@ can appear multiple times within a single Dockerfile to
+    -- create multiple images or use one build stage as a dependency for
+    -- another. Simply make a note of the last image ID output by the
+    -- commit before each new FROM instruction. Each @FROM@ instruction
+    -- clears any state created by previous instructions.
+    --
+    -- Optionally a name can be given to a new build stage by adding @AS
+    -- name@ to the @FROM@ instruction. The name can be used in
+    -- subsequent @FROM@ and @COPY --from=<name|index>@ instructions to
+    -- refer to the image built in this stage.
+    --
+    -- The @tag@ or @digest@ values are optional. If you omit either of
+    -- them, the builder assumes a @latest@ tag by default. The builder
+    -- returns an error if it cannot find the tag value.
 
   | Run Script  -- File [ScriptParam]
     -- ^ RUN has 2 forms:
     --
-    -- Syntax:
-    -- @
-    -- RUN <command> (the command is run in a shell - /bin/sh -c - shell form)
-    -- RUN ["executable", "param1", "param2"] (exec form)
-    -- @
+    -- - RUN <command> (shell form, the command is run in a shell, which
+    --   by default is /bin/sh -c on Linux or cmd /S /C on Windows)
+    --
+    -- - RUN ["executable", "param1", "param2"] (exec form)
+    --
+    -- The RUN instruction will execute any commands in a new layer on
+    -- top of the current image and commit the results. The resulting
+    -- committed image will be used for the next step in the Dockerfile.
+    --
+    -- Layering RUN instructions and generating commits conforms to the
+    -- core concepts of Docker where commits are cheap and containers can
+    -- be created from any point in an image’s history, much like source
+    -- control.
+    --
+    -- The exec form makes it possible to avoid shell string munging, and
+    -- to RUN commands using a base image that does not contain the
+    -- specified shell executable.
+    --
+    -- The default shell for the shell form can be changed using the
+    -- SHELL command.
 
   | Cmd [ ScriptFile ]
     -- ^ The CMD instruction has three forms:
@@ -122,6 +148,20 @@ data Instruction
     -- LABEL description="This text illustrates \
     -- that label-values can span multiple lines."
     -- @
+
+  | Maintainer String
+    -- ^ The MAINTAINER instruction sets the Author field of the
+    -- generated images. The LABEL instruction is a much more flexible
+    -- version of this and you should use it instead, as it enables
+    -- setting any metadata you require, and can be viewed easily, for
+    -- example with docker inspect. To set a label corresponding to the
+    -- MAINTAINER field you could use:
+    --
+    --     LABEL maintainer="SvenDowideit@home.org.au"
+    --
+    -- This will then be visible from docker inspect with the other
+    -- labels.
+
   | Expose Int
     -- ^ EXPOSE <port> [<port>...]
   | Env String String
@@ -166,7 +206,7 @@ data Instruction
     -- from <src> and adds them to the filesystem of the container at the
     -- path <dest>.
 
-  | Copy String FilePath
+  | Copy FilePath FilePath [CopyOpt]
     -- ^
     -- COPY has two forms:
     --
@@ -222,7 +262,7 @@ data Instruction
   deriving Show
 
 prettyCmd                    :: Instruction -> String
-prettyCmd (From f)           = "FROM " ++ f
+prettyCmd (From f mas)       = "FROM " ++ f ++ maybe "" (" AS " ++) mas
 prettyCmd (Maintainer m)     = "MAINTAINER " ++ m
 prettyCmd (Run scr)          = "RUN " ++ scr
 prettyCmd (Cmd cmds)         = "CMD " ++ show cmds
@@ -231,18 +271,35 @@ prettyCmd (Label k Nothing)  = "LABEL " ++ k
 prettyCmd (Expose p)         = "EXPOSE " ++ show p
 prettyCmd (Env k v)          = "ENV " ++ k ++ " " ++ v
 prettyCmd (Add s d)          = "ADD " ++ s ++ " " ++ d
-prettyCmd (Copy s d)         = "COPY " ++ s ++ " " ++ d
+prettyCmd (Copy s d opts)    = "COPY " ++ renderOpts opts ++ " " ++ s ++ " " ++ d
 prettyCmd (Entrypoint e ps)  = "ENTRYPOINT " ++ show (e:ps)
 prettyCmd (Volume vs)        = "VOLUME " ++ show vs
 prettyCmd (User u)           = "USER " ++ u
 prettyCmd (WorkDir cwd)      = "WORKDIR " ++ cwd
 prettyCmd (OnBuild instr)    = error ("ONBUILD "  ++ "is not currently supported.")
 
+class DockerOpt a where
+    renderDockerOpt :: a -> String
+
+data CopyOpt = CopyOptFrom String
+             | CopyOptChown String
+             deriving Show
+
+instance DockerOpt CopyOpt where
+    renderDockerOpt = \case
+        CopyOptFrom n -> "--from=" ++ n
+        CopyOptChown n -> "--chown=" ++ n
+
+renderOpts :: DockerOpt a => [a] -> String
+renderOpts = unwords . fmap renderDockerOpt
 
 -- * Instructions
 
 from :: String -> Docker ()
-from f = tell [ From f ]
+from f = tell [ From f Nothing ]
+
+fromas :: String -> As -> Docker ()
+fromas f as = tell [ From f (Just as) ]
 
 maintainer :: String -> Docker ()
 maintainer m = tell [ Maintainer m ]
@@ -264,8 +321,8 @@ expose p = tell [ Expose p ]
 add :: FilePath -> FilePath -> Docker ()
 add k v = tell [ Add k v ]
 
-copy :: FilePath -> FilePath -> Docker ()
-copy s d = tell [ Copy s d ]
+copy :: FilePath -> FilePath -> [CopyOpt] -> Docker ()
+copy s d opts = tell [ Copy s d opts ]
 
 entrypoint :: FilePath -> [Param] -> Docker ()
 entrypoint e ps = tell [ Entrypoint e ps ]
