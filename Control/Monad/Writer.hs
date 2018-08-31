@@ -16,10 +16,6 @@ module Control.Monad.Writer
       ) where
 
 
-import Control.Applicative
-import Data.Monoid
-
-
 -- * Identity
 
 -- | Trivial Identity monad.
