@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
 
+import Control.Monad (forM_)
+import Data.Monoid   ((<>))
 import Test.Hspec
-import Control.Monad
 
 import Data.Docker
 
@@ -14,7 +14,8 @@ main = hspec $ do
     it "sanity checks test-suite" $ do
       head [23 ..] `shouldBe` (23 :: Int)
 
-    let tsts = [
+    let tsts :: [(String, Docker (), String)]
+        tsts = [
             ("FROM", from "ubuntu:trusty", "FROM ubuntu:trusty")
           , ("FROM .. AS .. ", fromas "ubuntu:trusty" "base", "FROM ubuntu:trusty AS base")
           , ("RUN shell form", run "echo hi", "RUN echo hi")
@@ -49,4 +50,4 @@ main = hspec $ do
 
     forM_ tsts $ \(name, instr, fixture) -> do
         it ("supports " <> name <> " instruction") $ do
-            dockerfile instr `shouldBe` fixture <> "\n"
+            dockerfile instr `shouldBe` (fixture <> "\n")
