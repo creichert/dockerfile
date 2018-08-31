@@ -460,7 +460,7 @@ prettyCmd = \case
     From f mas                     -> "FROM " ++ f ++ maybe "" (" AS " ++) mas
     Run scr                        -> "RUN " ++ scr
     Cmd cmds                       -> "CMD " ++ show cmds
-    Label kvs                      -> "LABEL " ++ unwords (fmap (\(k,v) -> show k <> "=" <> show v) kvs)
+    Label kvs                      -> "LABEL " ++ unwords (fmap (\(k,v) -> show k ++ "=" ++ show v) kvs)
     Maintainer m                   -> "MAINTAINER " ++ m
     Expose p                       -> "EXPOSE " ++ show p
     Env k v                        -> "ENV " ++ k ++ " " ++ v
