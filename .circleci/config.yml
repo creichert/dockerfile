@@ -7,44 +7,127 @@ workflows:
     jobs:
       - build
       - build-nightly
+      - build-lts-11
+      - build-lts-9
 
 references:
 
-  restore_backend_stack_cache: &restore_backend_stack_cache
+  # Default branch / master
+
+  default_cache_key: &default_cache_key
+    v1-stack-{{ checksum "stack.yaml" }}-{{ checksum "dockerfile.cabal" }}
+
+  restore_stack_default_cache: &restore_stack_default_cache
     restore_cache:
       keys:
-        - v1-cache-stack-{{ .Branch }}-{{ .Revision }}
-        - v1-cache-stack-{{ .Branch }}
-        - v1-cache-stack
+        - *default_cache_key
+        - v1-stack-{{ checksum "stack.yaml" }}-
+        - v1-stack
 
-  save_backend_stack_cache: &save_backend_stack_cache
+  save_stack_default_cache: &save_stack_default_cache
     save_cache:
-      key: v1-cache-stack-{{ .Branch }}-{{ checksum "dockerfile.cabal" }}
+      key: *default_cache_key
+      paths:
+        - ~/.stack
+
+  # nightly
+
+  nightly_cache_key: &nightly_cache_key
+    v1-stack-nightly-{{ checksum "dockerfile.cabal" }}
+
+  restore_stack_nightly_cache: &restore_stack_nightly_cache
+    restore_cache:
+      keys:
+        - *nightly_cache_key
+        - v1-stack
+
+  save_stack_nightly_cache: &save_stack_nightly_cache
+    save_cache:
+      key: *nightly_cache_key
+      paths:
+        - ~/.stack
+
+  # lts-11
+
+  lts-11_cache_key: &lts-11_cache_key
+    v1-stack-lts-11-{{ checksum "dockerfile.cabal" }}
+
+  restore_stack_lts-11_cache: &restore_stack_lts-11_cache
+    restore_cache:
+      keys:
+        - *lts-11_cache_key
+        - v1-stack
+
+  save_stack_lts-11_cache: &save_stack_lts-11_cache
+    save_cache:
+      key: *lts-11_cache_key
+      paths:
+        - ~/.stack
+
+  # lts-9
+
+  lts-9_cache_key: &lts-9_cache_key
+    v1-stack-lts-9-{{ checksum "dockerfile.cabal" }}
+
+  restore_stack_lts-9_cache: &restore_stack_lts-9_cache
+    restore_cache:
+      keys:
+        - *lts-9_cache_key
+        - v1-stack
+
+  save_stack_lts-9_cache: &save_stack_lts-9_cache
+    save_cache:
+      key: *lts-9_cache_key
       paths:
         - ~/.stack
 
 jobs:
   build:
-    working_directory: ~/dockerfile/dockerfile
-    parallelism: 1
     docker:
       - image: fpco/stack-build:lts-12.7
     steps:
       - checkout
-      - *restore_backend_stack_cache
+      - *restore_stack_default_cache
       - run: stack setup --no-terminal
       - run: stack install --no-terminal --only-dependencies --jobs 2
-      - *save_backend_stack_cache
+      - *save_stack_default_cache
       - run: stack test --no-terminal
 
   build-nightly:
-    working_directory: ~/dockerfile/dockerfile
-    parallelism: 1
     docker:
       - image: fpco/stack-build:latest
+    environment:
+      STACK_ARGS: "--resolver nightly --no-terminal"
     steps:
       - checkout
-      - *restore_backend_stack_cache
-      - run: stack setup --no-terminal --resolver nightly
-      - run: stack install --no-terminal --only-dependencies --jobs 2 --test --resolver nightly
-      - run: stack test --no-terminal --resolver nightly
+      - *restore_stack_nightly_cache
+      - run: stack setup $STACK_ARGS
+      - run: stack install $STACK_ARGS --only-dependencies --jobs 2
+      - *save_stack_nightly_cache
+      - run: stack test $STACK_ARGS
+
+  build-lts-11:
+    docker:
+      - image: fpco/stack-build:lts-11
+    environment:
+      STACK_ARGS: "--resolver lts-11 --no-terminal"
+    steps:
+      - checkout
+      - *restore_stack_lts-11_cache
+      - run: stack setup $STACK_ARGS
+      - run: stack install $STACK_ARGS --only-dependencies --jobs 2
+      - *save_stack_lts-11_cache
+      - run: stack test $STACK_ARGS
+
+  build-lts-9:
+    docker:
+      - image: fpco/stack-build:lts-9
+    environment:
+      STACK_ARGS: "--resolver lts-9 --no-terminal"
+    steps:
+      - checkout
+      - *restore_stack_lts-9_cache
+      - run: stack setup $STACK_ARGS
+      - run: stack install $STACK_ARGS --only-dependencies --jobs 2
+      - *save_stack_lts-9_cache
+      - run: stack test $STACK_ARGS
