@@ -1,47 +1,65 @@
-#+AUTHOR: Christopher Reichert
-#+TITLE: Haskell Dockerfile DSL
+Dockerfile DSL for Haskell
 
-[[https://travis-ci.org/creichert/dockerfile][https://travis-ci.org/creichert/dockerfile.svg?branch=master]]
+[![CircleCI](https://circleci.com/gh/creichert/dockerfile.svg?style=svg)](https://circleci.com/gh/creichert/dockerfile)
 
 A simple Dockerfile DSL in Haskell
 
-#+BEGIN_SRC haskell
 
-{-# LANGUAGE OverloadedStrings #-}
+### Examples
 
-import Data.Docker
+- Write a simple Dockerfile
 
-main :: IO ()
-main = do
-  let df = dockerfile $ do
-             from "debian:stable"
-             maintainer "Christopher Reichert <creichert07@gmail.com>"
-             run "apt-get -y update"
-             run "apt-get -y upgrade"
-             cmd ["echo", "hello world"]
+    {-# LANGUAGE OverloadedStrings #-}
 
-  putStrLn df
-#+END_SRC
+    import Data.Docker
 
+    main :: IO ()
+    main = putStrLn $ do
+        dockerfile $ do
+            from "debian:stable"
+            env "DEBIAN_FRONTEND" "noninteractive"
+            run "apt-get -y update"
+            run "apt-get -y upgrade"
+            cmd ["echo", "hello world"]
 
-** Motivation
+- Write a Dockerfile directly to a file
 
+    {-# LANGUAGE OverloadedStrings #-}
 
-- Type Safety
+    import Data.Docker
 
+    main :: IO ()
+    main = dockerfileWrite "Dockerfile.example $ do
+        from "debian:stable"
+        run "apt-get -y update"
+        run "apt-get -y upgrade"
+        cmd ["echo", "hello world"]
 
-  Eliminates common errors and syntax mistakes.
+- Multi-stage build (a cleaner alternative to https://github.com/fpco/haskell-scratch):
 
-  /More work to be done here, see Haddock comments/
+    {-# LANGUAGE OverloadedStrings #-}
 
+    import Data.Docker
 
-- Composable
+    main :: IO ()
+    main = putStrLn $ do
 
-  Dockerfiles can be more easily composed and manipulated, making it
-  easier to integrate into programs.
+        dockerfile $ do
 
-  =postgresDockerFile >> postgisDockerFile >> otherDockerFile=
+            fromas "debian:stable" "base"
+            env "DEBIAN_FRONTEND" "noninteractive"
 
+            run "apt-get -y update"
+            run "apt-get -y install netbase"
 
-- Support for "monadic" computation (mapM,forM,replicateM,etc)
+            let prod_img_files = [
+                    "/lib/x86_64-linux-gnu/libc.so.6"
+                  , "/etc/protocols"
+                  ]
 
+            from "scratch"
+
+            forM_ prod_img_files $ \fp -> do
+                copyfrom "base" fp fp
+
+            entrypoint ["bash"]
