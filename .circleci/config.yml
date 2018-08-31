@@ -1,0 +1,50 @@
+
+version: 2
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - build
+      - build-nightly
+
+references:
+
+  restore_backend_stack_cache: &restore_backend_stack_cache
+    restore_cache:
+      keys:
+        - v1-cache-stack-{{ .Branch }}-{{ .Revision }}
+        - v1-cache-stack-{{ .Branch }}
+        - v1-cache-stack
+
+  save_backend_stack_cache: &save_backend_stack_cache
+    save_cache:
+      key: v1-cache-stack-{{ .Branch }}-{{ checksum "dockerfile.cabal" }}
+      paths:
+        - ~/.stack
+
+jobs:
+  build:
+    working_directory: ~/dockerfile/dockerfile
+    parallelism: 1
+    docker:
+      - image: fpco/stack-build:lts-12.7
+    steps:
+      - checkout
+      - *restore_backend_stack_cache
+      - run: stack setup --no-terminal
+      - run: stack install --no-terminal --only-dependencies --jobs 2
+      - *save_backend_stack_cache
+      - run: stack test --no-terminal
+
+  build-nightly:
+    working_directory: ~/dockerfile/dockerfile
+    parallelism: 1
+    docker:
+      - image: fpco/stack-build:latest
+    steps:
+      - checkout
+      - *restore_backend_stack_cache
+      - run: stack setup --no-terminal --resolver nightly
+      - run: stack install --no-terminal --only-dependencies --jobs 2 --test --resolver nightly
+      - run: stack test --no-terminal --resolver nightly
