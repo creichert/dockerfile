@@ -8,6 +8,7 @@ workflows:
       - build
       - build-nightly
       - build-lts-11
+      - build-lts-10
       - build-lts-9
 
 references:
