@@ -2,12 +2,11 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2a465f8ed04a10c646d4be50af2f1387b0132b65bc581d6db51432a7d1fe8d61
+-- hash: 903ba5a19231f754ceb5a3b9fc52f72de494f50efcef09332c8b8eda932ba098
 
 name:           dockerfile
 version:        0.2.0
 synopsis:       A Haskell DSL for generating Dockerfiles
-description:    A Haskell DSL for generating Dockerfiles
 category:       Data
 homepage:       https://github.com/creichert/dockerfile#readme
 bug-reports:    https://github.com/creichert/dockerfile/issues

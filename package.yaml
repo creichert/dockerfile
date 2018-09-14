@@ -1,7 +1,6 @@
 name: dockerfile
 version: '0.2.0'
 synopsis: A Haskell DSL for generating Dockerfiles
-description: A Haskell DSL for generating Dockerfiles
 category: Data
 author: Christopher Reichert
 maintainer: creichert07@gmail.com
