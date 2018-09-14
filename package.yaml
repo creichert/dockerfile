@@ -1,0 +1,28 @@
+name: dockerfile
+version: '0.2.0'
+synopsis: A Haskell DSL for generating Dockerfiles
+description: A Haskell DSL for generating Dockerfiles
+category: Data
+author: Christopher Reichert
+maintainer: creichert07@gmail.com
+copyright: (c) 2018 Christopher Reichert <creichert07@gmail.com>
+license: MIT
+github: creichert/dockerfile
+
+dependencies:
+  - base == 4.*
+
+library:
+  exposed-modules:
+    - Data.Docker
+  other-modules:
+    - Control.Monad.Writer
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options: -Wall
+    dependencies:
+      - dockerfile
+      - hspec

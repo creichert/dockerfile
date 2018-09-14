@@ -1,5 +1,8 @@
 
+import Control.Monad (forM_)
+import Data.Monoid   ((<>))
 import Test.Hspec
+
 import Data.Docker
 
 
@@ -11,36 +14,40 @@ main = hspec $ do
     it "sanity checks test-suite" $ do
       head [23 ..] `shouldBe` (23 :: Int)
 
-    it "supports FROM instruction" $ do
-      dockerfile (from "ubuntu:trusty") `shouldBe` "FROM ubuntu:trusty\n"
+    let tsts :: [(String, Docker (), String)]
+        tsts = [
+            ("FROM", from "ubuntu:trusty", "FROM ubuntu:trusty")
+          , ("FROM .. AS .. ", fromas "ubuntu:trusty" "base", "FROM ubuntu:trusty AS base")
+          , ("RUN shell form", run "echo hi", "RUN echo hi")
+          , ("CMD exec form", cmd ["bash"], "CMD [\"bash\"]")
+          , ("LABEL exec form", label [("version","v1.0")], "LABEL \"version\"=\"v1.0\"")
+          , ("MAINTAINER", maintainer "Chris <chris@rbros.com>" , "MAINTAINER Chris <chris@rbros.com>")
+          , ("EXPOSE", expose 3000, "EXPOSE 3000")
+          , ("ENV", env "DEBIAN_FRONTEND" "noninteractive" , "ENV DEBIAN_FRONTEND noninteractive")
+          , ("ADD", add ["package.yaml"] "/", "ADD package.yaml /")
+          , ("ADD --chown", addchown ["cr:cr", "1"] ["./package.yaml"] "/", "ADD --chown=cr:cr --chown=1 ./package.yaml /")
+          , ("COPY ", copy ["package.yaml"] "/", "COPY package.yaml /")
+          , ("COPY --from", copyfrom "ci" ["file1.txt"] "/", "COPY --from=ci file1.txt /")
+          , ("COPY --chown", copychown ["cr:cr", "1"] ["./package.yaml"] "/", "COPY --chown=cr:cr --chown=1 ./package.yaml /")
 
-    it "supports MAINTAINER instruction" $ do
-      dockerfile (maintainer "Christopher Reichert <creichert07@gmail.com>")
-        `shouldBe` "MAINTAINER Christopher Reichert <creichert07@gmail.com>\n"
+          , ("ENTRYPOINT", entrypoint "bash" ["/opt/custom.sh"], "ENTRYPOINT [\"bash\",\"/opt/custom.sh\"]")
+          , ("VOLUME", volume ["/myvol"], "VOLUME [\"/myvol\"]")
 
-    {-
-    it "supports RUN instruction" $ do
-      undefined
-      -- let dockerfile = runDocker (maintainer "Christopher Reichert <creichert07@gmail.com>")
-      -- dockerfile `shouldBe` "MAINTAINER Christopher Reichert <creichert07@gmail.com>\n"
+          , ("USER", user "pat:wheels", "USER pat:wheels")
+          , ("WORKDIR", workdir "/", "WORKDIR /")
 
-    it "supports ENV instruction" $ do
-      undefined
-      -- let dockerfile = runDocker (maintainer "Christopher Reichert <creichert07@gmail.com>")
-      -- dockerfile `shouldBe` "MAINTAINER Christopher Reichert <creichert07@gmail.com>\n"
+          , ("ARG", arg "node_version" Nothing, "ARG node_version")
+          , ("ARG def", arg "node_version" (Just "9.7.2"), "ARG node_version=9.7.2")
 
-    it "supports CMD instruction" $ do
-      undefined
-      -- let dockerfile = runDocker (maintainer "Christopher Reichert <creichert07@gmail.com>")
-      -- dockerfile `shouldBe` "MAINTAINER Christopher Reichert <creichert07@gmail.com>\n"
+          , ("STOPSIGNAL", stopsignal "9", "STOPSIGNAL 9")
 
-    it "supports EXPOSE instruction" $ do
-      undefined
-      -- let dockerfile = runDocker (maintainer "Christopher Reichert <creichert07@gmail.com>")
-      -- dockerfile `shouldBe` "MAINTAINER Christopher Reichert <creichert07@gmail.com>\n"
+          , ("HEALTHCHECK NONE", healthcheck Nothing, "HEALTHCHECK NONE")
+          , ("HEALTHCHECK", healthcheck (Just (["--interval=5m"], "curl -f http://localhost || exit 1")), "HEALTHCHECK --interval=5m CMD curl -f http://localhost || exit 1")
 
-    it "supports ADD instruction" $ do
-      undefined
-      -- let dockerfile = runDocker (maintainer "Christopher Reichert <creichert07@gmail.com>")
-      -- dockerfile `shouldBe` "ADD Christopher Reichert <creichert07@gmail.com>\n"
-    -}
+          -- TODO "SHELL"
+          -- TODO "ONBUILD"
+          ]
+
+    forM_ tsts $ \(name, instr, fixture) -> do
+        it ("supports " <> name <> " instruction") $ do
+            dockerfile instr `shouldBe` (fixture <> "\n")

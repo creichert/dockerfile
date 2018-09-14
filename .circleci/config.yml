@@ -16,7 +16,7 @@ references:
   # Default branch / master
 
   default_cache_key: &default_cache_key
-    v2-stack-{{ checksum "stack.yaml" }}-{{ checksum "dockerfile.cabal" }}
+    v2-stack-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
 
   restore_stack_default_cache: &restore_stack_default_cache
     restore_cache:
@@ -34,7 +34,7 @@ references:
   # nightly
 
   nightly_cache_key: &nightly_cache_key
-    v2-stack-nightly-{{ checksum "dockerfile.cabal" }}
+    v2-stack-nightly-{{ checksum "package.yaml" }}
 
   restore_stack_nightly_cache: &restore_stack_nightly_cache
     restore_cache:
@@ -51,7 +51,7 @@ references:
   # lts-11
 
   lts-11_cache_key: &lts-11_cache_key
-    v2-stack-lts-11-{{ checksum "dockerfile.cabal" }}
+    v2-stack-lts-11-{{ checksum "package.yaml" }}
 
   restore_stack_lts-11_cache: &restore_stack_lts-11_cache
     restore_cache:
@@ -68,7 +68,7 @@ references:
   # lts-10
 
   lts-10_cache_key: &lts-10_cache_key
-    v2-stack-lts-10-{{ checksum "dockerfile.cabal" }}
+    v2-stack-lts-10-{{ checksum "package.yaml" }}
 
   restore_stack_lts-10_cache: &restore_stack_lts-10_cache
     restore_cache:
@@ -85,7 +85,7 @@ references:
   # lts-9
 
   lts-9_cache_key: &lts-9_cache_key
-    v2-stack-lts-9-{{ checksum "dockerfile.cabal" }}
+    v2-stack-lts-9-{{ checksum "package.yaml" }}
 
   restore_stack_lts-9_cache: &restore_stack_lts-9_cache
     restore_cache:
