@@ -1,47 +1,63 @@
-#+AUTHOR: Christopher Reichert
-#+TITLE: Haskell Dockerfile DSL
 
-[[https://travis-ci.org/creichert/dockerfile][https://travis-ci.org/creichert/dockerfile.svg?branch=master]]
+## `dockerfile` - A simple Dockerfile DSL for Haskell
 
-A simple Dockerfile DSL in Haskell
+[![CircleCI](https://circleci.com/gh/creichert/dockerfile.svg?style=svg)](https://circleci.com/gh/creichert/dockerfile)
 
-#+BEGIN_SRC haskell
+### Examples
 
-{-# LANGUAGE OverloadedStrings #-}
+- Write a simple Dockerfile
 
-import Data.Docker
+    {-# LANGUAGE OverloadedStrings #-}
 
-main :: IO ()
-main = do
-  let df = dockerfile $ do
-             from "debian:stable"
-             maintainer "Christopher Reichert <creichert07@gmail.com>"
-             run "apt-get -y update"
-             run "apt-get -y upgrade"
-             cmd ["echo", "hello world"]
+    import Data.Docker
 
-  putStrLn df
-#+END_SRC
+    main :: IO ()
+    main = putStrLn $ do
+        dockerfile $ do
+            from "debian:stable"
+            env "DEBIAN_FRONTEND" "noninteractive"
+            run "apt-get -y update"
+            run "apt-get -y upgrade"
+            cmd ["echo", "hello world"]
 
+- Write a Dockerfile directly to a file
 
-** Motivation
+    {-# LANGUAGE OverloadedStrings #-}
 
+    import Data.Docker
 
-- Type Safety
+    main :: IO ()
+    main = dockerfileWrite "Dockerfile.example $ do
+        from "debian:stable"
+        run "apt-get -y update"
+        run "apt-get -y upgrade"
+        cmd ["echo", "hello world"]
 
+- Multi-stage build (a cleaner alternative to https://github.com/fpco/haskell-scratch):
 
-  Eliminates common errors and syntax mistakes.
+    {-# LANGUAGE OverloadedStrings #-}
 
-  /More work to be done here, see Haddock comments/
+    import Data.Docker
 
+    main :: IO ()
+    main = putStrLn $ do
 
-- Composable
+        dockerfile $ do
 
-  Dockerfiles can be more easily composed and manipulated, making it
-  easier to integrate into programs.
+            fromas "debian:stable" "base"
+            env "DEBIAN_FRONTEND" "noninteractive"
 
-  =postgresDockerFile >> postgisDockerFile >> otherDockerFile=
+            run "apt-get -y update"
+            run "apt-get -y install netbase"
 
+            let prod_img_files = [
+                    "/lib/x86_64-linux-gnu/libc.so.6"
+                  , "/etc/protocols"
+                  ]
 
-- Support for "monadic" computation (mapM,forM,replicateM,etc)
+            from "scratch"
 
+            forM_ prod_img_files $ \fp -> do
+                copyfrom "base" fp fp
+
+            entrypoint ["bash"]
