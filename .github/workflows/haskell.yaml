@@ -1,0 +1,24 @@
+name: Haskell CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Copy repo into actions 
+      uses: actions/checkout@v3
+    
+    - name: install dependancies, build and test stack project.
+      uses: freckle/stack-action@v5

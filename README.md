@@ -1,8 +1,6 @@
 
 ## `dockerfile` - A simple Dockerfile DSL for Haskell
 
-[![CircleCI](https://circleci.com/gh/creichert/dockerfile.svg?style=svg)](https://circleci.com/gh/creichert/dockerfile)
-
 ### Examples
 
 - Write a simple Dockerfile

@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 903ba5a19231f754ceb5a3b9fc52f72de494f50efcef09332c8b8eda932ba098
+-- hash: 036575e334c24829ae4f449dfc2d227c195f95cdc82de3d8c60b2dc79df6aca8
 
 name:           dockerfile
 version:        0.2.0
@@ -16,7 +18,6 @@ copyright:      (c) 2018 Christopher Reichert <creichert07@gmail.com>
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 
 source-repository head
   type: git
@@ -26,9 +27,10 @@ library
   exposed-modules:
       Data.Docker
   other-modules:
-      Control.Monad.Writer
+      Paths_dockerfile
   build-depends:
-      base ==4.*
+      base >=4.7 && <5
+    , mtl
   default-language: Haskell2010
 
 test-suite spec
@@ -40,7 +42,8 @@ test-suite spec
       test
   ghc-options: -Wall
   build-depends:
-      base ==4.*
+      base >=4.7 && <5
     , dockerfile
     , hspec
+    , mtl
   default-language: Haskell2010

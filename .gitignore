@@ -3,3 +3,4 @@ dist/
 Dockerfile
 .stack-work
 dist-stack/
+stack.yaml.lock

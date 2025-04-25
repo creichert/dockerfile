@@ -9,13 +9,12 @@ license: MIT
 github: creichert/dockerfile
 
 dependencies:
-  - base == 4.*
+  - base >= 4.7 && < 5
+  - mtl
 
 library:
   exposed-modules:
     - Data.Docker
-  other-modules:
-    - Control.Monad.Writer
 
 tests:
   spec:
